@@ -51,7 +51,7 @@ MeetMind-AI-API-Testing/
 │   └── Bug-Report-Template.md
 │
 └── 05-Evidence/
-    └── README.md
+    └── APi-Testing-Screenshots
 ```
 
 ## Testing Approach
