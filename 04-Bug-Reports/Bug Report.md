@@ -1,106 +1,115 @@
-# API Bug Report
+# Bug Reports
 
-## Bug ID
+## Project Information
 
-`BUG-MEET-001`
+| Field            | Value                         |
+| ---------------- | ----------------------------- |
+| **Project**      | MeetMind AI                   |
+| **Tester**       | Bashir Ahmed                  |
+| **Testing Type** | API + Exploratory Testing     |
+| **Tool**         | Postman                       |
+| **Environment**  | Local Development Environment |
 
-## Related Test Case
+---
 
-`TC-MEET-005 — Meeting Summary`
+# BUG-MEET-001
 
-## Summary
+## AI Assistant Request Fails Due to Missing Backend Route
 
-Meeting Summary endpoint returns `404 Not Found` even after the meeting's AI processing has completed.
+| Field            | Details                                                 |
+| ---------------- | ------------------------------------------------------- |
+| **Bug ID**       | BUG-MEET-001                                            |
+| **Title**        | AI Assistant request fails due to missing backend route |
+| **Module**       | AI Assistant                                            |
+| **Severity**     | High                                                    |
+| **Priority**     | High                                                    |
+| **Status**       | Confirmed                                               |
+| **Testing Type** | Exploratory Testing                                     |
 
-## Endpoint
+### Description
+
+While using the MeetMind AI application normally, a request was submitted through the AI Assistant.
+
+Instead of receiving an AI-generated response, the application displayed a routing-related error.
+
+Further backend investigation showed that the required API route for the AI Assistant request was missing/not registered.
+
+### Steps to Reproduce
+
+1. Log in to MeetMind AI.
+2. Open the AI Assistant.
+3. Enter a normal user question.
+4. Submit the question.
+5. Observe the response.
+
+### Expected Result
+
+The AI Assistant should process the request and return an appropriate AI-generated response.
+
+### Actual Result
+
+The request failed with a routing error because the required backend route was missing.
+
+### Root Cause
+
+The backend did not contain/register the API route required by the AI Assistant request.
+
+### Impact
+
+The AI Assistant functionality could not complete the expected request-response workflow.
+
+### Evidence
+
+Recommended evidence:
 
 ```text
+05-Evidence/
+└── BUG-MEET-001-AI-Assistant-Missing-Route/
+    ├── ai-assistant-error.png
+    ├── route-investigation.png
+    └── corrected-response.png
+```
+
+### Classification
+
+**Confirmed application defect.**
+
+---
+
+# Previously Investigated Issue — Meeting Summary 404
+
+## Status: Not a Defect
+
+During an earlier testing session, the following endpoint returned `404 Not Found`:
+
+```http
 GET /api/v1/meetings/{meeting_id}/summary
 ```
 
-## Preconditions
+The initial response suggested that the meeting summary endpoint might have been defective.
 
-* API server is running.
-* User is authenticated with a valid Bearer token.
-* Meeting exists.
-* Meeting transcript has been processed.
-* AI processing status is completed.
-* Valid meeting ID is available.
+However, further investigation showed that the backend queue worker required for AI processing and summary generation was not running during that test.
 
-## Steps to Reproduce
+The required command was subsequently started:
 
-1. Create a meeting.
-2. Process the meeting transcript.
-3. Wait until the AI processing status becomes completed.
-4. Send a `GET` request to:
-
-   ```text
-   /api/v1/meetings/{meeting_id}/summary
-   ```
-5. Observe the response.
-
-## Expected Result
-
-The API should return `200 OK` and provide the generated meeting summary.
-
-Example:
-
-```json
-{
-  "message": "Meeting summary retrieved successfully.",
-  "data": {
-    "summary": "..."
-  }
-}
+```bash
+php artisan queue:work --queue=transcription,ai -v
 ```
 
-## Actual Result
+The meeting was tested again after the queue worker was running.
 
-The API returns:
+### Retest Result
 
-```text
-404 Not Found
-```
+The AI processing completed successfully and the meeting summary was generated and retrieved correctly.
 
-The generated meeting summary cannot be retrieved even though AI processing has completed.
+### Final Classification
 
-## HTTP Status
+**Not a confirmed defect.**
 
-Expected: `200 OK`
+### Cause
 
-Actual: `404 Not Found`
+Local backend/queue processing was not running during the original test.
 
-## Severity
+### Testing Lesson
 
-`High`
-
-**Reason:** Meeting summarization is a core AI feature of MeetMind AI. If the summary has been successfully generated but cannot be retrieved through the API, users cannot access an important application feature.
-
-## Priority
-
-`P1`
-
-## Evidence
-
-```text
-../05-Evidence/BUG-MEET-001-meeting-summary-404.png
-```
-
-## Status
-
-`Open`
-
-## Notes
-
-The issue should be investigated to determine whether the problem is related to:
-
-* Summary record creation.
-* Meeting-to-summary relationship.
-* Summary retrieval query.
-* Meeting ID/model binding.
-* AI processing completion state.
-* Route/controller logic.
-* Database record availability.
-* Authorization or resource lookup.
-
-> Never include passwords, access tokens, refresh tokens, API keys, or other secrets in the bug report or evidence.
+When testing asynchronous functionality, the required background workers must be running before classifying an API failure as an application defect.
